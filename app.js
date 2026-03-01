@@ -8,6 +8,10 @@ const historyBtn = document.getElementById('historyBtn');
 const historyPanel = document.getElementById('historyPanel');
 const historyList = document.getElementById('historyList');
 const closeHistory = document.getElementById('closeHistory');
+const helpBtn = document.getElementById('helpBtn');
+const helpPanel = document.getElementById('helpPanel');
+const closeHelp = document.getElementById('closeHelp');
+const srAnnounce = document.getElementById('srAnnounce');
 
 let stream = null;
 let recognition = null;
@@ -16,6 +20,122 @@ let recognitionActive = false; // Toggle mode - spacebar toggles listening on/of
 let networkErrorCount = 0; // Track consecutive network errors
 let isListening = false; // Track if we're actively listening
 let scanHistory = []; // Store scan history
+let audioContext = null; // For beep sounds
+let lastFocusedElement = null; // For focus management
+
+// ==================== ACCESSIBILITY FUNCTIONS ====================
+
+// Initialize Web Audio API for beeps
+function initAudioFeedback() {
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('Audio feedback initialized');
+    } catch (e) {
+        console.error('Web Audio API not supported:', e);
+    }
+}
+
+// Play beep sound for audio feedback
+function playBeep(frequency = 440, duration = 100, volume = 0.3) {
+    if (!audioContext) return;
+    
+    try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration / 1000);
+    } catch (e) {
+        console.error('Error playing beep:', e);
+    }
+}
+
+// Audio feedback presets
+const audioFeedback = {
+    listeningOn: () => playBeep(880, 150, 0.2),      // High beep - listening activated
+    listeningOff: () => playBeep(440, 150, 0.2),     // Mid beep - listening deactivated
+    scanStart: () => playBeep(660, 100, 0.2),        // Scan initiated
+    success: () => {                                  // Success - two ascending beeps
+        playBeep(523, 100, 0.2);
+        setTimeout(() => playBeep(659, 100, 0.2), 100);
+    },
+    error: () => {                                    // Error - descending beep
+        playBeep(440, 200, 0.2);
+        setTimeout(() => playBeep(330, 200, 0.2), 150);
+    }
+};
+
+// Announce to screen readers (separate from visual status)
+function announceToScreenReader(message, priority = 'polite') {
+    if (!srAnnounce) return;
+    
+    // Clear previous announcement
+    srAnnounce.textContent = '';
+    
+    // Force reflow to ensure screen reader picks up the change
+    void srAnnounce.offsetHeight;
+    
+    // Set new announcement
+    srAnnounce.textContent = message;
+    srAnnounce.setAttribute('aria-live', priority);
+    
+    console.log('Screen reader announcement:', message);
+}
+
+// Focus management - save current focus
+function saveFocus() {
+    lastFocusedElement = document.activeElement;
+}
+
+// Focus management - restore previous focus
+function restoreFocus() {
+    if (lastFocusedElement && lastFocusedElement !== document.body) {
+        setTimeout(() => {
+            lastFocusedElement.focus();
+        }, 100);
+    }
+}
+
+// Focus management - trap focus within element
+function trapFocus(element) {
+    const focusableElements = element.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])'
+    );
+    const firstFocusable = focusableElements[0];
+    const lastFocusable = focusableElements[focusableElements.length - 1];
+    
+    element.addEventListener('keydown', function(e) {
+        if (e.key !== 'Tab') return;
+        
+        if (e.shiftKey) {
+            if (document.activeElement === firstFocusable) {
+                lastFocusable.focus();
+                e.preventDefault();
+            }
+        } else {
+            if (document.activeElement === lastFocusable) {
+                firstFocusable.focus();
+                e.preventDefault();
+            }
+        }
+    });
+    
+    // Focus first element
+    if (firstFocusable) {
+        firstFocusable.focus();
+    }
+}
+
+// ==================== END ACCESSIBILITY FUNCTIONS ====================
 
 // Initialize camera
 async function initCamera() {
@@ -88,13 +208,16 @@ function displayHistory() {
         const date = new Date(item.timestamp);
         const timeStr = date.toLocaleString();
         
+        historyItem.setAttribute('role', 'listitem');
         historyItem.innerHTML = `
-            <img src="${item.image}" alt="Scan ${index + 1}" class="history-image">
+            <img src="${item.image}" alt="" class="history-image" role="presentation">
             <div class="history-details">
                 <div class="history-time">${timeStr}</div>
                 <div class="history-caption">${item.caption}</div>
             </div>
-            <button class="history-delete" onclick="deleteHistoryItem(${index})" title="Delete">🗑️</button>
+            <button class="history-delete" 
+                    onclick="deleteHistoryItem(${index})" 
+                    aria-label="Delete scan from ${timeStr}: ${item.caption.substring(0, 50)}">🗑️</button>
         `;
         
         historyList.appendChild(historyItem);
@@ -103,18 +226,84 @@ function displayHistory() {
 
 // Delete history item
 function deleteHistoryItem(index) {
+    const deletedCaption = scanHistory[index].caption.substring(0, 50);
     scanHistory.splice(index, 1);
     saveScanHistory();
     displayHistory();
+    
+    // Announce deletion
+    announceToScreenReader(`Scan deleted: ${deletedCaption}`);
+    audioFeedback.listeningOff();
 }
 
 // Toggle history panel
 function toggleHistory() {
-    if (historyPanel.style.display === 'none' || historyPanel.style.display === '') {
+    const isVisible = historyPanel.style.display === 'flex';
+    
+    if (!isVisible) {
+        // Opening history
+        saveFocus();
         displayHistory();
         historyPanel.style.display = 'flex';
+        historyPanel.setAttribute('aria-hidden', 'false');
+        historyBtn.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('history-open');
+        
+        // Trap focus in panel
+        trapFocus(historyPanel);
+        
+        // Announce to screen reader
+        announceToScreenReader(`Scan history opened. ${scanHistory.length} items in history.`);
+        
+        // Audio feedback
+        audioFeedback.success();
     } else {
+        // Closing history
         historyPanel.style.display = 'none';
+        historyPanel.setAttribute('aria-hidden', 'true');
+        historyBtn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('history-open');
+        
+        // Restore focus
+        restoreFocus();
+        
+        // Announce to screen reader
+        announceToScreenReader('Scan history closed.');
+    }
+}
+
+// Toggle help panel
+function toggleHelp() {
+    const isVisible = helpPanel.style.display === 'flex';
+    
+    if (!isVisible) {
+        // Opening help
+        saveFocus();
+        helpPanel.style.display = 'flex';
+        helpPanel.setAttribute('aria-hidden', 'false');
+        helpBtn.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('help-open');
+        
+        // Trap focus in panel
+        trapFocus(helpPanel);
+        
+        // Announce to screen reader
+        announceToScreenReader('Help panel opened. Use arrow keys or tab to navigate instructions.');
+        
+        // Audio feedback
+        audioFeedback.success();
+    } else {
+        // Closing help
+        helpPanel.style.display = 'none';
+        helpPanel.setAttribute('aria-hidden', 'true');
+        helpBtn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('help-open');
+        
+        // Restore focus
+        restoreFocus();
+        
+        // Announce to screen reader
+        announceToScreenReader('Help panel closed.');
     }
 }
 
@@ -162,7 +351,14 @@ async function initVoiceRecognition() {
             isListening = true;
             networkErrorCount = 0;
             micBtn.style.backgroundColor = 'rgba(0, 255, 0, 0.9)'; // Green when active
+            micBtn.setAttribute('aria-pressed', 'true');
             showStatus('Listening... say "scan"', true);
+            
+            // Audio feedback
+            audioFeedback.listeningOn();
+            
+            // Screen reader announcement
+            announceToScreenReader('Voice recognition activated. Listening for scan command. Press spacebar to stop listening.');
         };
         
         recognition.onresult = (event) => {
@@ -175,6 +371,12 @@ async function initVoiceRecognition() {
             if (result.isFinal && command.includes('scan')) {
                 console.log('Scan command detected!');
                 showStatus('Scan command detected!');
+                
+                // Audio feedback
+                audioFeedback.scanStart();
+                
+                // Screen reader announcement
+                announceToScreenReader('Scan command detected. Capturing and analyzing image.');
                 
                 // Pause voice recognition while processing
                 isListening = false;
@@ -264,14 +466,23 @@ async function initVoiceRecognition() {
             } else {
                 console.log('Recognition stopped');
                 recognitionActive = false;
+                isListening = false;
                 micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Back to blue
+                micBtn.setAttribute('aria-pressed', 'false');
                 hideStatus();
+                
+                // Audio feedback
+                audioFeedback.listeningOff();
+                
+                // Screen reader announcement
+                announceToScreenReader('Voice recognition deactivated.');
             }
         };
         
         // Don't auto-start - wait for spacebar
         console.log('Voice recognition ready - press SPACEBAR to start listening');
         showStatus('Press SPACEBAR to start listening');
+        announceToScreenReader('Voice recognition ready. Press spacebar to activate listening, or click the Scan button to capture an image.');
     } else {
         console.log('Speech recognition not supported');
         showStatus('Voice commands not supported in this browser');
@@ -302,7 +513,7 @@ function showStatus(message, keepVisible = false) {
     if (!keepVisible) {
         window.statusTimeout = setTimeout(() => {
             status.classList.remove('visible');
-        }, 3000);
+        }, 5000); // Increased from 3s to 5s for accessibility
     }
 }
 
@@ -337,6 +548,12 @@ async function generateCaption() {
             // Show caption and keep it visible while speaking
             showStatus(data.caption, true);
             
+            // Screen reader announcement
+            announceToScreenReader(`Caption generated: ${data.caption}`, 'polite');
+            
+            // Audio feedback
+            audioFeedback.success();
+            
             // Add to history
             addToHistory(imageData, data.caption);
             
@@ -345,9 +562,13 @@ async function generateCaption() {
             hideStatus();
         } else {
             showStatus('No caption generated');
+            announceToScreenReader('No caption could be generated.', 'assertive');
+            audioFeedback.error();
         }
     } catch (error) {
         showStatus('Error: ' + error.message);
+        announceToScreenReader('Error generating caption: ' + error.message, 'assertive');
+        audioFeedback.error();
         console.error('Caption error:', error);
     } finally {
         captionBtn.disabled = false;
@@ -521,6 +742,69 @@ window.addEventListener('keydown', (event) => {
     }
 });
 
+// Additional keyboard navigation for accessibility
+window.addEventListener('keydown', (event) => {
+    // Escape key - close any open panel
+    if (event.key === 'Escape') {
+        let panelClosed = false;
+        
+        if (historyPanel && historyPanel.style.display === 'flex') {
+            toggleHistory();
+            panelClosed = true;
+        }
+        
+        if (helpPanel && helpPanel.style.display === 'flex') {
+            toggleHelp();
+            panelClosed = true;
+        }
+        
+        if (panelClosed) {
+            event.preventDefault();
+        }
+    }
+    
+    // H key or ? key - open/close help panel (accessibility shortcut)
+    if ((event.key === 'h' || event.key === 'H' || event.key === '?') && 
+        !event.ctrlKey && !event.altKey && 
+        event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        toggleHelp();
+        event.preventDefault();
+    }
+    
+    // L key - open/close history/log panel (accessibility shortcut)
+    if ((event.key === 'l' || event.key === 'L') && 
+        !event.ctrlKey && !event.altKey && 
+        event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        toggleHistory();
+        event.preventDefault();
+    }
+    
+    // Enter or Space on mic button
+    if ((event.key === 'Enter' || event.key === ' ') && 
+        document.activeElement === micBtn) {
+        event.preventDefault();
+        // Trigger spacebar handler logic
+        if (!recognition) return;
+        
+        if (!isListening) {
+            isListening = true;
+            try {
+                recognition.start();
+            } catch (e) {
+                console.log('Could not start recognition:', e);
+                isListening = false;
+            }
+        } else {
+            isListening = false;
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.log('Could not stop recognition:', e);
+            }
+        }
+    }
+});
+
 // Make deleteHistoryItem available globally
 window.deleteHistoryItem = deleteHistoryItem;
 
@@ -531,6 +815,7 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('micBtn:', micBtn);
     console.log('micSelect:', micSelect);
     console.log('historyBtn:', historyBtn);
+    console.log('helpBtn:', helpBtn);
     
     if (captionBtn) {
         captionBtn.addEventListener('click', generateCaption);
@@ -557,11 +842,37 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (closeHistory) {
         closeHistory.addEventListener('click', () => {
-            historyPanel.style.display = 'none';
+            toggleHistory();
         });
     }
     
-    loadScanHistory();    initCamera();
+    if (helpBtn) {
+        helpBtn.addEventListener('click', toggleHelp);
+    } else {
+        console.error('helpBtn not found');
+    }
+    
+    if (closeHelp) {
+        closeHelp.addEventListener('click', () => {
+            toggleHelp();
+        });
+    }
+    
+    // Initialize audio feedback system
+    initAudioFeedback();
+    
+    loadScanHistory();
+    initCamera();
     initVoiceRecognition();
     loadAudioDevices();
+    
+    // Open help panel by default on first load
+    setTimeout(() => {
+        toggleHelp();
+    }, 500);
+    
+    // Initial accessibility announcement
+    setTimeout(() => {
+        announceToScreenReader('pictureThis by team itsJohnSight loaded. Help panel is open with instructions. Press spacebar to activate voice recognition, or click the Scan button to capture an image. Press H or question mark for help. Press L to view scan history.');
+    }, 1000);
 });

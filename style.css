@@ -5,9 +5,60 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: Verdana, Tahoma, Arial, sans-serif;
     background-color: #000;
     overflow: hidden;
+}
+
+/* Accessibility: Skip link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #007bff;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* App Header/Logo */
+.app-header {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 950;
+    pointer-events: none;
+}
+
+.app-logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.15), rgba(0, 123, 255, 0.05));
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    letter-spacing: 0.5px;
+}
+
+/* Accessibility: Screen reader only content */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
 
 .container {
@@ -49,6 +100,20 @@ body {
     background-color: #0056b3;
 }
 
+.caption-button:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
+.caption-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.caption-button:focus-visible {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
 .caption-button:active {
     background-color: #004085;
 }
@@ -60,7 +125,7 @@ body {
 
 .status {
     position: absolute;
-    top: 20px;
+    top: 90px;
     left: 20px;
     right: 20px;
     padding: 15px;
@@ -70,6 +135,17 @@ body {
     border-radius: 8px;
     display: none;
     z-index: 10;
+    transition: left 0.3s ease, right 0.3s ease, top 0.3s ease;
+}
+
+/* Adjust status bar when help panel is open */
+body.help-open .status {
+    left: 370px;
+}
+
+/* Adjust status bar when history panel is open */
+body.history-open .status {
+    right: 420px;
 }
 
 .status.visible {
@@ -102,6 +178,20 @@ body {
     background-color: rgba(0, 86, 179, 0.9);
 }
 
+.mic-button:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
+.mic-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.mic-button:focus-visible {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
 .mic-select {
     padding: 10px;
     font-size: 14px;
@@ -118,10 +208,15 @@ body {
     color: white;
 }
 
+.mic-select:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
 /* History Button */
 .history-button-container {
     position: absolute;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     z-index: 10;
 }
@@ -141,6 +236,63 @@ body {
 
 .history-button:hover {
     background-color: rgba(0, 86, 179, 0.9);
+}
+
+.history-button:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
+.history-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.history-button:focus-visible {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
+/* Help Button */
+.help-button-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.help-button {
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+    font-weight: bold;
+    background-color: rgba(0, 123, 255, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.help-button:hover {
+    background-color: rgba(0, 86, 179, 0.9);
+}
+
+.help-button:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
+.help-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.help-button:focus-visible {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
 }
 
 /* History Panel */
@@ -185,6 +337,12 @@ body {
 
 .close-history:hover {
     color: #ff6b6b;
+}
+
+.close-history:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+    color: #ffeb3b;
 }
 
 .history-list {
@@ -260,6 +418,11 @@ body {
     background-color: rgba(255, 0, 0, 0.9);
 }
 
+.history-delete:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+}
+
 /* Scrollbar styling for history list */
 .history-list::-webkit-scrollbar {
     width: 8px;
@@ -278,9 +441,240 @@ body {
     background: rgba(0, 123, 255, 0.9);
 }
 
+/* Help Panel */
+.help-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 350px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid #007bff;
+}
+
+.help-header h2 {
+    color: white;
+    font-size: 24px;
+    margin: 0;
+}
+
+.close-help {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    line-height: 1;
+}
+
+.close-help:hover {
+    color: #ff6b6b;
+}
+
+.close-help:focus {
+    outline: 3px solid #ffeb3b;
+    outline-offset: 2px;
+    color: #ffeb3b;
+}
+
+.help-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.help-section {
+    margin-bottom: 25px;
+}
+
+.help-section h3 {
+    color: #007bff;
+    font-size: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(0, 123, 255, 0.3);
+    padding-bottom: 5px;
+}
+
+.help-list {
+    color: white;
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 0;
+    padding-left: 20px;
+}
+
+.help-list li {
+    margin-bottom: 8px;
+}
+
+/* Keyboard shortcuts grid layout */
+.shortcuts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.shortcut-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 15px;
+    align-items: center;
+    padding: 10px;
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.shortcut-key {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.shortcut-desc {
+    color: #ccc;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Keyboard-only operation note */
+.keyboard-note {
+    margin: 0;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.12), rgba(255, 193, 7, 0.04));
+    border-left: 4px solid #ffc107;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.7;
+    backdrop-filter: blur(5px);
+}
+
+.help-shortcuts {
+    color: white;
+    font-size: 14px;
+    margin: 0;
+}
+
+.help-shortcuts dt {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.help-shortcuts dd {
+    margin-left: 0;
+    margin-bottom: 10px;
+    color: #ccc;
+}
+
+/* Keyboard key styling */
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    line-height: 1.4;
+    color: #fff;
+    background-color: #333;
+    border: 1px solid #666;
+    border-radius: 4px;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+    margin: 0 2px;
+}
+
+/* Color indicator for button states */
+.color-indicator {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Accessibility info section styling */
+.accessibility-info {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid #4caf50;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.accessibility-info h3 {
+    color: #4caf50;
+    border-bottom-color: rgba(76, 175, 80, 0.3);
+}
+
+.accessibility-info p {
+    color: white;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+/* Team info section styling */
+.team-info {
+    background: rgba(0, 123, 255, 0.1);
+    border-left: 3px solid #007bff;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.team-info h3 {
+    text-align: center;
+}
+
+.team-info p {
+    color: white;
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+/* Scrollbar styling for help panel */
+.help-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.help-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.help-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 123, 255, 0.7);
+    border-radius: 4px;
+}
+
+.help-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 123, 255, 0.9);
+}
+
 /* Responsive design for mobile */
 @media (max-width: 768px) {
     .history-panel {
+        width: 100%;
+    }
+    
+    .help-panel {
         width: 100%;
     }
 }

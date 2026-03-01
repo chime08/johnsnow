@@ -1,6 +1,7 @@
-# Live Caption Assistant
+# pictureThis
 
-Accessible live captioning system for people with visual impairments.
+**Accessible visual aid for people with visual impairments**  
+*Made by Team itsJohnSight for Quackhacks 2026*
 
 ## Setup
 
@@ -36,19 +37,98 @@ Accessible live captioning system for people with visual impairments.
 3. **Say "Scan"** to caption what the camera sees
 4. Caption will be displayed and spoken aloud
 5. **Press SPACEBAR again** to stop listening
-6. View previous scans by clicking the 📋 history button (top right)
+6. View previous scans by clicking the 📋 history button (bottom right)
+7. **Click the ? button** (bottom left) or **press H or ?** for help and keyboard shortcuts
+8. **Press L** to view scan log (history)
+
+### Keyboard Shortcuts (Accessible Navigation)
+
+- **SPACEBAR**: Toggle voice recognition on/off
+- **H** or **?**: Open/close help panel with complete instructions
+- **L**: Open/close scan log (history)
+- **ESC**: Close any open panel (help or history)
+- **TAB**: Navigate between controls
+- **ENTER**: Activate focused button
+- All controls have visible focus indicators (yellow outline)
 
 ### Voice Control (Toggle Mode)
 
 - **Press SPACEBAR once**: Activates microphone (button turns green, starts listening)
-- **Say "Scan"**: Triggers image capture and captioning
+  - Audio feedback: High beep sound
+  - Screen reader announces: "Voice recognition activated"
+- **Say \"Scan\"**: Triggers image capture and captioning
+  - Audio feedback: Mid beep sound
+  - Screen reader announces: "Scan command detected"
 - **Press SPACEBAR again**: Deactivates microphone (button turns blue, stops listening)
+  - Audio feedback: Low beep sound
+  - Screen reader announces: "Voice recognition deactivated"
 - This toggle design is more accessible and easier to use
+
+### Audio Feedback
+
+All major actions provide audio cues:
+- 🔊 **High beep**: Listening activated
+- 🔉 **Mid beep**: Scan command detected
+- 🔈 **Low beep**: Listening deactivated
+- ✓ **Two ascending beeps**: Caption successfully generated
+- ✗ **Descending beeps**: Error occurred
+
+### Built-in Help Panel
+
+- **Opens automatically** when you first load the site
+- Click the **? button** (bottom left) or press **H** or **?** key to toggle help
+- Includes:
+  - Quick start guide
+  - Complete keyboard shortcuts reference
+  - Button color explanations with visual indicators
+  - Audio feedback descriptions
+  - Usage tips
+- Accessible with screen readers
+- Full keyboard navigation
+- Press ESC to close
+
+## Accessibility Features
+
+This application is designed with accessibility as a core priority, following WCAG 2.1 Level AA guidelines:
+
+### Screen Reader Support
+- ✅ Full ARIA labels on all interactive elements
+- ✅ Semantic HTML structure with proper roles
+- ✅ Live region announcements for state changes
+- ✅ Alternative text where appropriate
+- ✅ Skip-to-content link for keyboard users
+
+### Keyboard Navigation
+- ✅ Complete keyboard control (no mouse required)
+- ✅ Visible focus indicators on all interactive elements
+- ✅ Logical tab order
+- ✅ Focus management (trapped in modals, restored on close)
+- ✅ Keyboard shortcuts (Spacebar, H, ?, L, ESC)
+- ✅ Built-in help panel with complete keyboard reference
+
+### Audio Feedback
+- ✅ Beep sounds for mode changes (helps blind users know state)
+- ✅ Text-to-speech for all captions
+- ✅ Different tones for different actions
+- ✅ Non-intrusive volume levels
+
+### Visual Design
+- ✅ High contrast colors
+- ✅ Large, easy-to-read text
+- ✅ Clear visual state indicators (color + shape)
+- ✅ Consistent UI patterns
+- ✅ Yellow focus outlines for visibility
+
+### Tested With
+- ✅ NVDA screen reader (Windows)
+- ✅ JAWS screen reader (Windows)
+- ✅ Keyboard-only navigation
+- ✅ High contrast mode
 
 ### Scan History
 
 - All scans are automatically saved with their images and captions
-- Click the **📋 button** in the top-right corner to view history
+- Click the **📋 button** in the bottom-right corner to view history
 - History is stored in your browser's local storage
 - Delete individual items by clicking the 🗑️ button on each entry
 - History persists across sessions (up to 50 items)
