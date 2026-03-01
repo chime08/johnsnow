@@ -92,6 +92,28 @@ async function speakCaption(text) {
     }
 }
 
+
+//// ── VOICE COMMAND (Speech Detection) ──
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.continuous = true;      // keep listening forever
+recognition.lang = 'en-US';
+
+recognition.onresult = (event) => {
+  const word = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+  console.log('Heard:', word);
+
+  if (word.includes('scan')) {
+    captionBtn.click();             // triggers the scan
+  }
+};
+
+recognition.onerror = (e) => console.error('Speech error:', e.error);
+
+// Start listening
+recognition.start();
+speakCaption('Say scan to take a photo');  // tell user it's ready
+
+
 // Event listeners
 captionBtn.addEventListener('click', generateCaption);
 
