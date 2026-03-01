@@ -1,7 +1,5 @@
 # pictureThis
-
-** an accessible visual aid for people with visual impairments**  
-*Made by Team itsJohnSight for Quackhacks 2026 #WeAreJohnSnow*
+**An accessible visual aid for people with visual impairments**  
 
 ## Setup
 
@@ -154,5 +152,7 @@ If you see a "network" error and the microphone button turns red:
 ### Other Common Issues
 
 - **Microphone not working**: Check browser permissions and system microphone settings
+
+*Made by Team itsJohnSight for [Stevens QuackHacks 2026](https://stevens-quackhacks-2026.devpost.com/) #WeAreJohnSnow*
 - **Camera not showing**: Ensure camera permissions are granted in browser settings
 - **No audio playback**: Check that your speakers/headphones are working and volume is up
