@@ -8,6 +8,8 @@ const micSelect = document.getElementById('micSelect');
 let stream = null;
 let recognition = null;
 let selectedMicId = null;
+let recognitionActive = true; // Track if recognition should be active
+let networkErrorCount = 0; // Track consecutive network errors
 
 // Initialize camera
 async function initCamera() {
@@ -63,6 +65,8 @@ async function initVoiceRecognition() {
         
         recognition.onstart = () => {
             console.log('Voice recognition started successfully');
+            recognitionActive = true;
+            networkErrorCount = 0;
             micBtn.style.backgroundColor = 'rgba(0, 255, 0, 0.9)'; // Green when active
         };
         
@@ -118,19 +122,42 @@ async function initVoiceRecognition() {
             }
             if (event.error === 'audio-capture') {
                 showStatus('Microphone error - check your microphone settings');
+                recognitionActive = false;
+                return;
+            }
+            if (event.error === 'network') {
+                networkErrorCount++;
+                console.error('Network error count:', networkErrorCount);
+                console.error('This error usually means:');
+                console.error('1. No internet connection');
+                console.error('2. Firewall/antivirus blocking Google Speech API');
+                console.error('3. Using a browser that doesn\'t support Speech Recognition');
+                console.error('Current browser:', navigator.userAgent);
+                recognitionActive = false; // Stop auto-restart
+                micBtn.style.backgroundColor = 'rgba(255, 0, 0, 0.9)'; // Red for error
+                showStatus('Voice recognition requires internet connection. Click mic button to retry.');
                 return;
             }
             showStatus('Voice recognition error: ' + event.error);
         };
         
         recognition.onend = () => {
-            console.log('Recognition ended, restarting...');
+            console.log('Recognition ended');
+            
+            // Only restart if recognition is meant to be active
+            if (!recognitionActive) {
+                console.log('Recognition stopped - not restarting due to error');
+                micBtn.style.backgroundColor = 'rgba(255, 0, 0, 0.9)'; // Red when stopped
+                return;
+            }
+            
             micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Back to blue
             // Automatically restart recognition after a short delay
             setTimeout(() => {
                 try {
                     recognition.start();
                     console.log('Recognition restarted successfully');
+                    networkErrorCount = 0; // Reset error count on successful start
                 } catch (e) {
                     console.log('Recognition restart failed:', e);
                 }
@@ -263,6 +290,24 @@ async function loadAudioDevices() {
 
 // Toggle microphone selector visibility
 function toggleMicSelector() {
+    // If recognition is inactive due to error, try to restart it
+    if (!recognitionActive && recognition) {
+        console.log('Attempting to restart voice recognition...');
+        recognitionActive = true;
+        networkErrorCount = 0;
+        try {
+            recognition.start();
+            showStatus('Restarting voice recognition...');
+            micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Blue
+        } catch (e) {
+            console.error('Failed to restart recognition:', e);
+            showStatus('Failed to restart voice recognition');
+            recognitionActive = false;
+        }
+        return;
+    }
+    
+    // Otherwise, toggle microphone selector
     if (micSelect.style.display === 'none') {
         micSelect.style.display = 'block';
     } else {
