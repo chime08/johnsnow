@@ -4,12 +4,18 @@ const captionBtn = document.getElementById('captionBtn');
 const status = document.getElementById('status');
 const micBtn = document.getElementById('micBtn');
 const micSelect = document.getElementById('micSelect');
+const historyBtn = document.getElementById('historyBtn');
+const historyPanel = document.getElementById('historyPanel');
+const historyList = document.getElementById('historyList');
+const closeHistory = document.getElementById('closeHistory');
 
 let stream = null;
 let recognition = null;
 let selectedMicId = null;
-let recognitionActive = true; // Track if recognition should be active
+let recognitionActive = false; // Toggle mode - spacebar toggles listening on/off
 let networkErrorCount = 0; // Track consecutive network errors
+let isListening = false; // Track if we're actively listening
+let scanHistory = []; // Store scan history
 
 // Initialize camera
 async function initCamera() {
@@ -25,9 +31,96 @@ async function initCamera() {
     }
 }
 
+// Load scan history from localStorage
+function loadScanHistory() {
+    try {
+        const saved = localStorage.getItem('scanHistory');
+        if (saved) {
+            scanHistory = JSON.parse(saved);
+            console.log('Loaded', scanHistory.length, 'items from history');
+        }
+    } catch (e) {
+        console.error('Error loading scan history:', e);
+        scanHistory = [];
+    }
+}
+
+// Save scan history to localStorage
+function saveScanHistory() {
+    try {
+        // Limit history to 50 items
+        if (scanHistory.length > 50) {
+            scanHistory = scanHistory.slice(0, 50);
+        }
+        localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+        console.log('Saved scan history');
+    } catch (e) {
+        console.error('Error saving scan history:', e);
+    }
+}
+
+// Add scan to history
+function addToHistory(imageData, caption) {
+    const historyItem = {
+        timestamp: new Date().toISOString(),
+        image: imageData,
+        caption: caption
+    };
+    
+    scanHistory.unshift(historyItem); // Add to beginning
+    saveScanHistory();
+    console.log('Added to history, total items:', scanHistory.length);
+}
+
+// Display scan history
+function displayHistory() {
+    historyList.innerHTML = '';
+    
+    if (scanHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">No scan history yet. Say "scan" or press the Scan button to start.</div>';
+        return;
+    }
+    
+    scanHistory.forEach((item, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        const date = new Date(item.timestamp);
+        const timeStr = date.toLocaleString();
+        
+        historyItem.innerHTML = `
+            <img src="${item.image}" alt="Scan ${index + 1}" class="history-image">
+            <div class="history-details">
+                <div class="history-time">${timeStr}</div>
+                <div class="history-caption">${item.caption}</div>
+            </div>
+            <button class="history-delete" onclick="deleteHistoryItem(${index})" title="Delete">🗑️</button>
+        `;
+        
+        historyList.appendChild(historyItem);
+    });
+}
+
+// Delete history item
+function deleteHistoryItem(index) {
+    scanHistory.splice(index, 1);
+    saveScanHistory();
+    displayHistory();
+}
+
+// Toggle history panel
+function toggleHistory() {
+    if (historyPanel.style.display === 'none' || historyPanel.style.display === '') {
+        displayHistory();
+        historyPanel.style.display = 'flex';
+    } else {
+        historyPanel.style.display = 'none';
+    }
+}
+
 // Initialize voice recognition
 async function initVoiceRecognition() {
-    console.log('Initializing voice recognition...');
+    console.log('Initializing voice recognition (toggle mode)...');
     
     // Request microphone permission first
     try {
@@ -58,16 +151,18 @@ async function initVoiceRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
         
-        recognition.continuous = true;
-        recognition.interimResults = true; // Changed to true to get interim results
+        recognition.continuous = true; // Continuous listening when active
+        recognition.interimResults = true;
         recognition.lang = 'en-US';
         recognition.maxAlternatives = 1;
         
         recognition.onstart = () => {
             console.log('Voice recognition started successfully');
             recognitionActive = true;
+            isListening = true;
             networkErrorCount = 0;
             micBtn.style.backgroundColor = 'rgba(0, 255, 0, 0.9)'; // Green when active
+            showStatus('Listening... say "scan"', true);
         };
         
         recognition.onresult = (event) => {
@@ -80,6 +175,18 @@ async function initVoiceRecognition() {
             if (result.isFinal && command.includes('scan')) {
                 console.log('Scan command detected!');
                 showStatus('Scan command detected!');
+                
+                // Pause voice recognition while processing
+                isListening = false;
+                recognitionActive = false;
+                try {
+                    recognition.stop();
+                    console.log('Voice recognition paused for scanning');
+                    micBtn.style.backgroundColor = 'rgba(128, 128, 128, 0.9)'; // Gray when paused
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
+                
                 generateCaption();
             }
         };
@@ -144,34 +251,27 @@ async function initVoiceRecognition() {
         recognition.onend = () => {
             console.log('Recognition ended');
             
-            // Only restart if recognition is meant to be active
-            if (!recognitionActive) {
-                console.log('Recognition stopped - not restarting due to error');
-                micBtn.style.backgroundColor = 'rgba(255, 0, 0, 0.9)'; // Red when stopped
-                return;
+            // If we should still be listening, restart
+            if (isListening && networkErrorCount === 0) {
+                console.log('Restarting recognition...');
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.log('Recognition restart failed:', e);
+                    }
+                }, 100);
+            } else {
+                console.log('Recognition stopped');
+                recognitionActive = false;
+                micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Back to blue
+                hideStatus();
             }
-            
-            micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Back to blue
-            // Automatically restart recognition after a short delay
-            setTimeout(() => {
-                try {
-                    recognition.start();
-                    console.log('Recognition restarted successfully');
-                    networkErrorCount = 0; // Reset error count on successful start
-                } catch (e) {
-                    console.log('Recognition restart failed:', e);
-                }
-            }, 100);
         };
         
-        try {
-            recognition.start();
-            console.log('Recognition start called');
-            showStatus('Voice recognition active - say "scan" to capture');
-        } catch (error) {
-            console.error('Failed to start voice recognition:', error);
-            showStatus('Voice recognition not available');
-        }
+        // Don't auto-start - wait for spacebar
+        console.log('Voice recognition ready - press SPACEBAR to start listening');
+        showStatus('Press SPACEBAR to start listening');
     } else {
         console.log('Speech recognition not supported');
         showStatus('Voice commands not supported in this browser');
@@ -188,12 +288,31 @@ function capturePhoto() {
 }
 
 // Show status message
-function showStatus(message) {
+function showStatus(message, keepVisible = false) {
     status.textContent = message;
     status.classList.add('visible');
-    setTimeout(() => {
-        status.classList.remove('visible');
-    }, 3000);
+    
+    // Clear any existing timeout
+    if (window.statusTimeout) {
+        clearTimeout(window.statusTimeout);
+        window.statusTimeout = null;
+    }
+    
+    // Only auto-hide if keepVisible is false
+    if (!keepVisible) {
+        window.statusTimeout = setTimeout(() => {
+            status.classList.remove('visible');
+        }, 3000);
+    }
+}
+
+// Hide status message manually
+function hideStatus() {
+    if (window.statusTimeout) {
+        clearTimeout(window.statusTimeout);
+        window.statusTimeout = null;
+    }
+    status.classList.remove('visible');
 }
 
 // Generate caption
@@ -215,8 +334,15 @@ async function generateCaption() {
         const data = await response.json();
         
         if (data.caption) {
-            showStatus(data.caption);
+            // Show caption and keep it visible while speaking
+            showStatus(data.caption, true);
+            
+            // Add to history
+            addToHistory(imageData, data.caption);
+            
             await speakCaption(data.caption);
+            // Hide caption after audio finishes
+            hideStatus();
         } else {
             showStatus('No caption generated');
         }
@@ -225,6 +351,19 @@ async function generateCaption() {
         console.error('Caption error:', error);
     } finally {
         captionBtn.disabled = false;
+        
+        // Resume voice recognition after caption is done
+        if (recognition) {
+            isListening = true;
+            recognitionActive = true;
+            try {
+                recognition.start();
+                console.log('Voice recognition resumed after scanning');
+            } catch (e) {
+                // Recognition might already be running, that's okay
+                console.log('Could not restart recognition:', e);
+            }
+        }
     }
 }
 
@@ -253,14 +392,21 @@ async function speakCaption(text) {
         console.log('Playing audio...');
         await audio.play();
         
-        audio.onended = () => {
-            console.log('Audio playback finished');
-            URL.revokeObjectURL(audioUrl);
-        };
+        // Return a promise that resolves when audio finishes
+        return new Promise((resolve, reject) => {
+            audio.onended = () => {
+                console.log('Audio playback finished');
+                URL.revokeObjectURL(audioUrl);
+                resolve();
+            };
+            
+            audio.onerror = (e) => {
+                console.error('Audio playback error:', e);
+                URL.revokeObjectURL(audioUrl);
+                reject(e);
+            };
+        });
         
-        audio.onerror = (e) => {
-            console.error('Audio playback error:', e);
-        };
     } catch (error) {
         console.error('Speech error:', error);
         showStatus('Speech error: ' + error.message);
@@ -337,12 +483,54 @@ async function handleMicChange() {
     showStatus('Microphone changed');
 }
 
+// Spacebar toggle controls (press once to activate, press again to deactivate)
+window.addEventListener('keydown', (event) => {
+    // Only respond to spacebar if not typing in an input
+    if (event.code === 'Space' && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        event.preventDefault();
+        
+        if (!recognition) return;
+        
+        // Toggle listening state
+        if (!isListening) {
+            // Start listening
+            isListening = true;
+            console.log('Spacebar pressed - starting voice recognition');
+            
+            try {
+                recognition.start();
+                micBtn.style.backgroundColor = 'rgba(0, 255, 0, 0.9)'; // Green
+                showStatus('Listening... say "scan" (press SPACEBAR to stop)', true);
+            } catch (e) {
+                console.log('Could not start recognition:', e);
+                isListening = false;
+            }
+        } else {
+            // Stop listening
+            isListening = false;
+            console.log('Spacebar pressed - stopping voice recognition');
+            
+            try {
+                recognition.stop();
+                micBtn.style.backgroundColor = 'rgba(0, 123, 255, 0.9)'; // Blue
+                hideStatus();
+            } catch (e) {
+                console.log('Could not stop recognition:', e);
+            }
+        }
+    }
+});
+
+// Make deleteHistoryItem available globally
+window.deleteHistoryItem = deleteHistoryItem;
+
 // Event listeners and initialization
 window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded');
     console.log('captionBtn:', captionBtn);
     console.log('micBtn:', micBtn);
     console.log('micSelect:', micSelect);
+    console.log('historyBtn:', historyBtn);
     
     if (captionBtn) {
         captionBtn.addEventListener('click', generateCaption);
@@ -361,8 +549,19 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error('micSelect not found!');
     }
+        if (historyBtn) {
+        historyBtn.addEventListener('click', toggleHistory);
+    } else {
+        console.error('historyBtn not found');
+    }
     
-    initCamera();
+    if (closeHistory) {
+        closeHistory.addEventListener('click', () => {
+            historyPanel.style.display = 'none';
+        });
+    }
+    
+    loadScanHistory();    initCamera();
     initVoiceRecognition();
     loadAudioDevices();
 });
