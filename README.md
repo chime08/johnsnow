@@ -1,7 +1,7 @@
 # pictureThis
 
-**Accessible visual aid for people with visual impairments**  
-*Made by Team itsJohnSight for Quackhacks 2026*
+** an accessible visual aid for people with visual impairments**  
+*Made by Team itsJohnSight for Quackhacks 2026 #WeAreJohnSnow*
 
 ## Setup
 
