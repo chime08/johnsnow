@@ -25,14 +25,23 @@
 
 ## Usage
 
-1. Allow camera access when prompted
-2. **Press SPACEBAR** to activate listening (or click the "Scan" button)
-3. **Say "Scan"** to caption what the camera sees
-4. Caption will be displayed and spoken aloud
-5. **Press SPACEBAR again** to stop listening
-6. View previous scans by clicking the 📋 history button (bottom right)
-7. **Click the ? button** (bottom left) or **press H or ?** for help and keyboard shortcuts
-8. **Press L** to view scan log 📋 of previous entries
+### Two Ways to Scan:
+
+**Option 1: Voice Control (Hands-free)**
+1. **Press SPACEBAR** to activate voice listening  
+2. **Say "Scan"** to trigger image capture
+3. **Press SPACEBAR again** to stop listening
+
+**Option 2: Manual Button (Quick scan)**
+1. **Click the "Scan" button** to immediately capture and describe the scene
+   - No voice command needed!
+   - Just one click to scan
+
+After scanning (either method):
+- Caption will be displayed and spoken aloud
+- View previous scans by clicking the 📋 history button (bottom right)
+- **Click the ? button** (bottom left) or **press H or ?** for help and keyboard shortcuts
+- **Press L** to view scan log 📋 of previous entries
 
 ### Keyboard Shortcuts (Accessible Navigation)
 
@@ -46,13 +55,13 @@
 
 ### Voice Control (Toggle Mode)
 
-- **Press SPACEBAR once**: Activates microphone (button turns green, starts listening)
+- **Press SPACEBAR once**: Activates microphone (starts listening)
   - Audio feedback: High beep sound
   - Screen reader announces: "Voice recognition activated"
 - **Say \"Scan\"**: Triggers image capture and captioning
   - Audio feedback: Mid beep sound
   - Screen reader announces: "Scan command detected"
-- **Press SPACEBAR again**: Deactivates microphone (button turns blue, stops listening)
+- **Press SPACEBAR again**: Deactivates microphone (stops listening)
   - Audio feedback: Low beep sound
   - Screen reader announces: "Voice recognition deactivated"
 - This toggle design is more accessible and easier to use
@@ -73,7 +82,6 @@ All major actions provide audio cues:
 - Includes:
   - Quick start guide
   - Complete keyboard shortcuts reference
-  - Button color explanations with visual indicators
   - Audio feedback descriptions
   - Usage tips
 - Accessible with screen readers
@@ -130,20 +138,14 @@ This application is designed with accessibility as a core priority, following WC
 
 ### Voice Recognition Network Error
 
-If you see a "network" error and the microphone button turns red:
+If you see a "network" error:
 
 1. **Check Internet Connection**: Voice recognition requires an active internet connection as it uses cloud-based speech recognition services
 2. **Retry**: Press SPACEBAR to activate listening again once you have internet connection
-3. **Button Colors**:
-   - 🟢 Green: Microphone active (listening)
-   - 🟠 Orange: Speech detected
-   - 🔴 Red: Error occurred (network issue or microphone problem)
-   - 🔵 Blue: Ready (press spacebar to start)
-   - ⚪ Gray: Paused during scan/caption
 
 ### Voice Recognition Tips
 
-- Press SPACEBAR once to start listening (button turns green)
+- Press SPACEBAR once to start listening
 - Speak clearly and say "scan" or "scanning"
 - The word "scan" can be anywhere in your phrase (e.g., "please scan this")
 - Press SPACEBAR again to stop listening when done
@@ -152,7 +154,7 @@ If you see a "network" error and the microphone button turns red:
 ### Other Common Issues
 
 - **Microphone not working**: Check browser permissions and system microphone settings
-
-*Made by Team itsJohnSight for [Stevens QuackHacks 2026](https://stevens-quackhacks-2026.devpost.com/) #WeAreJohnSnow*
 - **Camera not showing**: Ensure camera permissions are granted in browser settings
 - **No audio playback**: Check that your speakers/headphones are working and volume is up
+
+*Made by Team itsJohnSight for [Stevens QuackHacks 2026](https://stevens-quackhacks-2026.devpost.com/) #WeAreJohnSnow*

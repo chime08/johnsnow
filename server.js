@@ -39,10 +39,12 @@ app.post('/api/caption', async (req, res) => {
         const data = await response.json();
         
         // Log the full response for debugging
+        console.log('Gemini Response Status:', response.status);
         console.log('Gemini Response:', JSON.stringify(data, null, 2));
         
         if (!response.ok) {
-            throw new Error(`Gemini API error: ${data.error?.message || 'Unknown error'}`);
+            console.error('Gemini API Error Details:', data);
+            throw new Error(`Gemini API error: ${data.error?.message || JSON.stringify(data)}`);
         }
         
         if (!data.candidates || !data.candidates[0]) {

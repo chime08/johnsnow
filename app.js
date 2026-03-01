@@ -259,13 +259,14 @@ function toggleHistory() {
         audioFeedback.success();
     } else {
         // Closing history
-        historyPanel.style.display = 'none';
+        // Restore focus FIRST (before setting aria-hidden to avoid focus conflicts)
+        restoreFocus();
+        
+        // Then hide the panel from assistive technology and visually
         historyPanel.setAttribute('aria-hidden', 'true');
+        historyPanel.style.display = 'none';
         historyBtn.setAttribute('aria-expanded', 'false');
         document.body.classList.remove('history-open');
-        
-        // Restore focus
-        restoreFocus();
         
         // Announce to screen reader
         announceToScreenReader('Scan history closed.');
@@ -294,13 +295,14 @@ function toggleHelp() {
         audioFeedback.success();
     } else {
         // Closing help
-        helpPanel.style.display = 'none';
+        // Restore focus FIRST (before setting aria-hidden to avoid focus conflicts)
+        restoreFocus();
+        
+        // Then hide the panel from assistive technology and visually
         helpPanel.setAttribute('aria-hidden', 'true');
+        helpPanel.style.display = 'none';
         helpBtn.setAttribute('aria-expanded', 'false');
         document.body.classList.remove('help-open');
-        
-        // Restore focus
-        restoreFocus();
         
         // Announce to screen reader
         announceToScreenReader('Help panel closed.');
@@ -531,6 +533,19 @@ async function generateCaption() {
     captionBtn.disabled = true;
     showStatus('Capturing image...');
     
+    // Save whether voice recognition was active before scanning
+    const wasListeningBeforeScan = isListening;
+    
+    // Pause voice recognition during scan
+    if (isListening && recognition) {
+        try {
+            recognition.stop();
+            isListening = false;
+        } catch (e) {
+            console.log('Could not stop recognition during scan:', e);
+        }
+    }
+    
     const imageData = capturePhoto();
     
     try {
@@ -573,8 +588,8 @@ async function generateCaption() {
     } finally {
         captionBtn.disabled = false;
         
-        // Resume voice recognition after caption is done
-        if (recognition) {
+        // Only resume voice recognition if it was active before the scan
+        if (wasListeningBeforeScan && recognition) {
             isListening = true;
             recognitionActive = true;
             try {
@@ -706,8 +721,11 @@ async function handleMicChange() {
 
 // Spacebar toggle controls (press once to activate, press again to deactivate)
 window.addEventListener('keydown', (event) => {
-    // Only respond to spacebar if not typing in an input
-    if (event.code === 'Space' && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+    // Only respond to spacebar if not typing in an input or on a button
+    if (event.code === 'Space' && 
+        event.target.tagName !== 'INPUT' && 
+        event.target.tagName !== 'TEXTAREA' &&
+        event.target.tagName !== 'BUTTON') {
         event.preventDefault();
         
         if (!recognition) return;
