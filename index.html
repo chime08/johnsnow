@@ -1,25 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Caption Assistant</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Object Scanner</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="container">
-        <video id="camera" autoplay playsinline></video>
-        <canvas id="canvas" style="display: none;"></canvas>
-        
-        <div class="controls">
-            <button id="captionBtn" class="caption-button">
-                Provide Live Caption
-            </button>
-        </div>
-        
-        <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <!-- ── INTRO SCREEN ── -->
+  <div id="introScreen" class="intro-screen">
+    <div class="intro-box">
+      <h1>👁️ AI Object Scanner</h1>
+      <p class="intro-msg" id="introMsg">
+        Welcome to the AI Object Scanner.<br/>
+        Please select a feature to get started:
+      </p>
+
+      <div class="intro-options">
+        <button class="option-btn" id="btnContrast" onclick="toggleOption('contrast')">
+          🌗 High Contrast
+        </button>
+        <button class="option-btn" id="btnText" onclick="toggleOption('text')">
+          🔠 Larger Text
+        </button>
+        <button class="option-btn" id="btnBoth" onclick="toggleOption('both')">
+          ✨ Both
+        </button>
+        <button class="option-btn" id="btnNone" onclick="toggleOption('none')">
+          ▶️ None / Skip
+        </button>
+      </div>
+
+      <button class="start-btn" id="startBtn" onclick="startApp()">
+        Start Scanning
+      </button>
     </div>
-    
-    <script src="app.js"></script>
+  </div>
+
+  <!-- ── MAIN APP ── -->
+  <div id="mainApp" class="container hidden">
+    <h1>🔍 AI Object Scanner</h1>
+    <p class="subtitle">Say <strong>"Scan"</strong> anytime you're ready to scan an object</p>
+
+    <div class="camera-wrapper">
+      <video id="camera" autoplay playsinline aria-label="Camera feed"></video>
+      <canvas id="canvas" hidden></canvas>
+    </div>
+
+    <button id="captionBtn" aria-label="Scan object and get audio description">
+      📸 Scan Object
+    </button>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
