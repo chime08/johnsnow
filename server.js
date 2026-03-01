@@ -62,6 +62,7 @@ app.post('/api/caption', async (req, res) => {
 app.post('/api/speak', async (req, res) => {
     try {
         const { text } = req.body;
+        console.log('Speech request received for text:', text);
         
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, {
             method: 'POST',
@@ -71,7 +72,7 @@ app.post('/api/speak', async (req, res) => {
             },
             body: JSON.stringify({
                 text,
-                model_id: 'eleven_monolingual_v1',
+                model_id: 'eleven_turbo_v2_5',
                 voice_settings: {
                     stability: 0.5,
                     similarity_boost: 0.5
@@ -79,7 +80,16 @@ app.post('/api/speak', async (req, res) => {
             })
         });
         
+        console.log('ElevenLabs response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('ElevenLabs API error:', errorText);
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`);
+        }
+        
         const audioBuffer = await response.buffer();
+        console.log('Audio buffer size:', audioBuffer.length);
         res.set('Content-Type', 'audio/mpeg');
         res.send(audioBuffer);
     } catch (error) {

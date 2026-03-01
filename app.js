@@ -72,23 +72,39 @@ async function generateCaption() {
 // Speak caption using ElevenLabs
 async function speakCaption(text) {
     try {
+        console.log('Requesting speech for:', text);
+        
         const response = await fetch('/api/speak', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })
         });
         
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Speech API failed');
+        }
+        
         const audioBlob = await response.blob();
+        console.log('Audio blob received, size:', audioBlob.size);
+        
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
-        audio.play();
+        console.log('Playing audio...');
+        await audio.play();
         
         audio.onended = () => {
+            console.log('Audio playback finished');
             URL.revokeObjectURL(audioUrl);
+        };
+        
+        audio.onerror = (e) => {
+            console.error('Audio playback error:', e);
         };
     } catch (error) {
         console.error('Speech error:', error);
+        showStatus('Speech error: ' + error.message);
     }
 }
 
