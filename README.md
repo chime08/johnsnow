@@ -23,12 +23,7 @@
    npm start
    ```
 
-5. Open browser to `http://localhost:3000`
-
-## Platform Support
-
-- Windows: Works natively
-- Raspberry Pi 5: Ensure Node.js is installed via `sudo apt install nodejs npm`
+5. Open browser to the URL shown in the terminal (ex. `http://localhost:3000` or `http://localhost:3001`)
 
 ## Usage
 
@@ -39,7 +34,7 @@
 5. **Press SPACEBAR again** to stop listening
 6. View previous scans by clicking the 📋 history button (bottom right)
 7. **Click the ? button** (bottom left) or **press H or ?** for help and keyboard shortcuts
-8. **Press L** to view scan log (history)
+8. **Press L** to view scan log 📋 of previous entries
 
 ### Keyboard Shortcuts (Accessible Navigation)
 
